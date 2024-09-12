@@ -35,3 +35,11 @@ class Feeding(models.Model):
   
   class Meta:
     ordering = ['-date']
+    
+# Add the Toy model
+class Toy(models.Model):
+  name = models.CharField(max_length=50)
+  color = models.CharField(max_length=20)
+
+  def __str__(self):
+    return self.name
