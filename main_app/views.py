@@ -12,10 +12,26 @@ class Home(APIView):
 class DogList(generics.ListCreateAPIView):
   queryset = Dog.objects.all()
   serializer_class = DogSerializer
+
 class DogDetail(generics.RetrieveUpdateDestroyAPIView):
   queryset = Dog.objects.all()
   serializer_class = DogSerializer
   lookup_field = 'id'
+
+  # add (override) the retrieve method below
+  def retrieve(self, request, *args, **kwargs):
+    instance = self.get_object()
+    serializer = self.get_serializer(instance)
+
+    # Get the list of toys not associated with this Dog
+    toys_not_associated = Toy.objects.exclude(id__in=instance.toys.all())
+    toys_serializer = ToySerializer(toys_not_associated, many=True)
+
+    return Response({
+        'dog': serializer.data,
+        'toys_not_associated': toys_serializer.data
+    })
+
 
 class FeedingListCreate(generics.ListCreateAPIView):
   serializer_class = FeedingSerializer
@@ -45,3 +61,19 @@ class ToyDetail(generics.RetrieveUpdateDestroyAPIView):
   queryset = Toy.objects.all()
   serializer_class = ToySerializer
   lookup_field = 'id'
+  
+
+class AddToyToDog(APIView):
+  def post(self, request, dog_id, toy_id):
+    dog = Dog.objects.get(id=dog_id)
+    toy = Toy.objects.get(id=toy_id)
+    dog.toys.add(toy)
+    return Response({'message': f'Toy {toy.name} added to Dog {dog.name}'})
+
+# Add this to the bottom of your views.py uunder the AddToyToCat function
+class RemoveToyFromDog(APIView):
+  def post(self, request, dog_id, toy_id):
+    dog = Dog.objects.get(id=dog_id)
+    toy = Toy.objects.get(id=toy_id)
+    dog.toys.remove(toy)
+    return Response({'message': f'Toy {toy.name} removed from Dog {dog.name}'})
